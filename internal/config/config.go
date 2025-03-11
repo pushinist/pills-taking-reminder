@@ -12,6 +12,7 @@ type Config struct {
 	Env string `yaml:"env" env-required:"true"`
 	HTTPServer
 	DB
+	NearTakingInterval time.Duration `yaml:"near_taking_interval" env-default:"60m"`
 }
 
 type HTTPServer struct {
