@@ -15,10 +15,16 @@ const (
 	Hourly Frequency = "hourly"
 )
 
-type Schedule struct {
-	ID           int64        `json:"schedule_id"`
+type ScheduleRequest struct {
+	MedicineName string    `json:"medicine_name"`
+	Frequency    Frequency `json:"frequency"`
+	Duration     int       `json:"duration"`
+	UserID       int64     `json:"user_id"`
+}
+
+type ScheduleResponse struct {
+	ID           int64        `json:"id"`
 	MedicineName string       `json:"medicine_name"`
-	Frequency    Frequency    `json:"frequency"`
 	StartDate    time.Time    `json:"start_date"`
 	EndDate      sql.NullTime `json:"end_date"`
 	UserID       int64        `json:"user_id"`
