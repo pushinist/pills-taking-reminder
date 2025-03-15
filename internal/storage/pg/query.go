@@ -47,7 +47,7 @@ VALUES ($1, $2)`
 		`
 
 	getSchedulesQuery = `
-		SELECT * FROM schedules
-		WHERE user_id = $1
+		SELECT id FROM schedules
+		WHERE user_id = $1 AND (end_date > $2 or end_date IS NULL)
 		`
 )

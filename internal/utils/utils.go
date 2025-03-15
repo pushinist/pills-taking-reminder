@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"pills-taking-reminder/internal/models"
 	"time"
 )
 
@@ -33,7 +32,7 @@ func RoundTime(timeString string) (string, error) {
 	return fmt.Sprintf("%02d:%02d", hour, minute), nil
 }
 
-func CountTakings(frequency models.Frequency) ([]string, error) {
+func CountTakings(frequency int) ([]string, error) {
 	startTime, err := time.Parse("15:04", startTimeString)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse start time: %w", err)
@@ -45,28 +44,15 @@ func CountTakings(frequency models.Frequency) ([]string, error) {
 
 	duration := endTime.Sub(startTime)
 
-	var count int
-	switch frequency {
-	case models.Once:
-		count = 1
-	case models.Twice:
-		count = 2
-	case models.Thrice:
-		count = 3
-	case models.Fourth:
-		count = 4
-	case models.Hourly:
-		count = 15
-	}
-	takingTimes := make([]string, count)
+	takingTimes := make([]string, frequency)
 
-	if count == 1 {
-		interval := duration / time.Duration(count)
+	if frequency == 1 {
+		interval := duration / time.Duration(frequency)
 		takingTimes[0] = startTime.Add(interval / 2).Format("15:04")
 	} else {
-		interval := duration / time.Duration(count-1)
+		interval := duration / time.Duration(frequency-1)
 		takingTime := startTime
-		for i := range count {
+		for i := range frequency {
 			takingTimes[i], err = RoundTime(takingTime.Format("15:04"))
 			if err != nil {
 				return nil, fmt.Errorf("failed to calculate taking times: %w", err)

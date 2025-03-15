@@ -1,12 +1,14 @@
 package main
 
 import (
-	"fmt"
 	"log/slog"
 	"os"
 	"pills-taking-reminder/internal/config"
+	"pills-taking-reminder/internal/server"
 	"pills-taking-reminder/internal/storage/pg"
 	"pills-taking-reminder/pkg/logger"
+
+	s "pills-taking-reminder/internal/service"
 )
 
 func main() {
@@ -21,6 +23,16 @@ func main() {
 		os.Exit(1)
 	}
 	log.Info("storage initialized")
+
+	service := s.NewService(db)
+
+	srv := server.NewServer(service)
+	srv.RegisterRoutes()
+	err = srv.Run(":8080")
+	if err != nil {
+		log.Error("failed to start server", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
 
 	//scheduleOnce := models.ScheduleRequest{
 	//	MedicineName: "AAAA",
@@ -63,43 +75,43 @@ func main() {
 	//	log.Info("created schedule", "id", id)
 	//}
 
-	schedules, err := db.GetSchedules(1)
-	if err != nil {
-		log.Error("failed to get schedules", slog.String("error", err.Error()))
-	} else {
-		log.Info("got schedules", "userid", 1)
-		for _, schedule := range schedules {
-			fmt.Println(schedule)
-		}
-	}
+	//schedules, err := db.GetSchedules(1)
+	//if err != nil {
+	//	log.Error("failed to get schedules", slog.String("error", err.Error()))
+	//} else {
+	//	log.Info("got schedules", "userid", 1)
+	//	for _, schedule := range schedules {
+	//		fmt.Println(schedule)
+	//	}
+	//}
+	//
+	//schedules, err = db.GetSchedules(2)
+	//if err != nil {
+	//	log.Error("failed to get schedules", slog.String("error", err.Error()))
+	//} else {
+	//	log.Info("got schedules", "userid", 2)
+	//	for _, schedule := range schedules {
+	//		fmt.Println(schedule)
+	//	}
+	//}
 
-	schedules, err = db.GetSchedules(2)
-	if err != nil {
-		log.Error("failed to get schedules", slog.String("error", err.Error()))
-	} else {
-		log.Info("got schedules", "userid", 2)
-		for _, schedule := range schedules {
-			fmt.Println(schedule)
-		}
-	}
-
-	//schedules, err := db.NextTakings(cfg.NearTakingInterval, 2)
+	//schedules, err := db.NextTakings(cfg.NearTakingInterval, 3)
 	//if err != nil {
 	//	log.Error("error getting storage", slog.String("error", err.Error()))
 	//} else {
-	//	log.Info("schedules for user", "userID", 2, "schedules", schedules)
-	//}
-	//
-	//for _, schedule := range schedules {
-	//	log.Info("schedule user", "userID", 2, "schedule", schedule)
+	//	log.Info("schedules for user", "userID", 1)
+	//	for _, schedule := range schedules {
+	//		log.Info("schedule", "schedule", schedule)
+	//	}
 	//}
 
 	//fmt.Println(utils.CountTakings(models.Fourth))
 
-	//schedule, takingTimes, err := db.GetSchedule(1, 2)
+	//schedule, err := db.GetSchedule(2, 3)
 	//if err != nil {
 	//	log.Error("failed to retrieve schedule", slog.String("error", err.Error()))
+	//} else {
+	//	fmt.Println(schedule)
 	//}
-	//fmt.Println(schedule)
-	//fmt.Println(takingTimes)
+
 }

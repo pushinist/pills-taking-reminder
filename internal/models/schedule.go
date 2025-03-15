@@ -5,21 +5,11 @@ import (
 	"time"
 )
 
-type Frequency string
-
-const (
-	Once   Frequency = "once"
-	Twice  Frequency = "twice"
-	Thrice Frequency = "thrice"
-	Fourth Frequency = "fourth"
-	Hourly Frequency = "hourly"
-)
-
 type ScheduleRequest struct {
-	MedicineName string    `json:"medicine_name"`
-	Frequency    Frequency `json:"frequency"`
-	Duration     int       `json:"duration"`
-	UserID       int64     `json:"user_id"`
+	MedicineName string `json:"medicine_name" validate:"required"`
+	Frequency    int    `json:"frequency" validate:"required,gte=1,lte=15"`
+	Duration     int    `json:"duration" validate:"gte=0"`
+	UserID       int64  `json:"user_id" validate:"required,gte=1"`
 }
 
 type ScheduleResponse struct {
@@ -28,4 +18,5 @@ type ScheduleResponse struct {
 	StartDate    time.Time    `json:"start_date"`
 	EndDate      sql.NullTime `json:"end_date"`
 	UserID       int64        `json:"user_id"`
+	TakingTime   []string     `json:"taking_time"`
 }
