@@ -1,8 +1,9 @@
 package server
 
 import (
+	"database/sql"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"github.com/go-playground/validator/v10"
 	"log"
 	"net/http"
@@ -43,7 +44,7 @@ func (s *Server) postScheduleHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) getSchedulesHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) getSchedulesIDsHandler(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.ParseInt(r.URL.Query().Get("user_id"), 10, 64)
 	if err != nil {
 		log.Printf("error: %v", err)
@@ -56,13 +57,61 @@ func (s *Server) getSchedulesHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	if len(schedulesIDs) == 0 {
-		message := fmt.Sprintf("No schedules found for user with id:%d", userID)
-		w.Write([]byte(message))
-		w.WriteHeader(http.StatusNotFound)
+	err = json.NewEncoder(w).Encode(schedulesIDs)
+	if err != nil {
+		log.Printf("error: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	err = json.NewEncoder(w).Encode(schedulesIDs)
+}
+
+func (s *Server) getScheduleHandler(w http.ResponseWriter, r *http.Request) {
+	userID, err := strconv.ParseInt(r.URL.Query().Get("user_id"), 10, 64)
+	if err != nil {
+		log.Printf("error: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	scheduleID, err := strconv.ParseInt(r.URL.Query().Get("schedule_id"), 10, 64)
+	if err != nil {
+		log.Printf("error: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	schedule, err := s.service.GetSchedule(userID, scheduleID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			w.WriteHeader(http.StatusNotFound)
+		}
+		log.Printf("error: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(schedule)
+	if err != nil {
+		log.Printf("error: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+}
+
+func (s *Server) getNextTakingsHandler(w http.ResponseWriter, r *http.Request) {
+	userID, err := strconv.ParseInt(r.URL.Query().Get("user_id"), 10, 64)
+	if err != nil {
+		log.Printf("error: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	nextTakings, err := s.service.GetNextTakings(userID)
+	if err != nil {
+		log.Printf("error: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	err = json.NewEncoder(w).Encode(nextTakings)
 	if err != nil {
 		log.Printf("error: %v", err)
 		w.WriteHeader(http.StatusBadRequest)

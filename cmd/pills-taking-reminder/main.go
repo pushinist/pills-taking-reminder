@@ -17,7 +17,7 @@ func main() {
 	log := logger.SetupLogger(cfg.Env)
 	log.Info("logger initialized, starting pills-taking-reminder", slog.String("env", cfg.Env))
 
-	db, err := pg.New(cfg.DB)
+	db, err := pg.New(cfg.DB, cfg.NearTakingInterval)
 	if err != nil {
 		log.Error("failed to initialize storage", slog.String("error", err.Error()))
 		os.Exit(1)
