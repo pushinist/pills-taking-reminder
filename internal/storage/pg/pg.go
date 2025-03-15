@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
+	"log"
 	"pills-taking-reminder/internal/config"
 	"pills-taking-reminder/internal/models"
 	"time"
@@ -143,12 +144,8 @@ func (s *Storage) GetSchedule(userID, scheduleID int64) (models.ScheduleResponse
 		return models.ScheduleResponse{}, fmt.Errorf("%s: %w", operation, err)
 	}
 	defer rows.Close()
-
-	if !rows.Next() {
-		return models.ScheduleResponse{}, sql.ErrNoRows
-	}
-
 	var schedule models.ScheduleResponse
+	var count int
 	for rows.Next() {
 		var rawTakingTime time.Time
 		err := rows.Scan(&schedule.ID, &schedule.MedicineName, &schedule.StartDate, &schedule.EndDate, &schedule.UserID, &rawTakingTime)
@@ -162,12 +159,17 @@ func (s *Storage) GetSchedule(userID, scheduleID int64) (models.ScheduleResponse
 		takingTime := rawTakingTime.Format("15:04")
 
 		schedule.TakingTime = append(schedule.TakingTime, takingTime)
+		count++
+	}
+	if count == 0 {
+		return models.ScheduleResponse{}, sql.ErrNoRows
 	}
 
 	if err := rows.Err(); err != nil {
 		return models.ScheduleResponse{}, fmt.Errorf("%s: %w", operation, err)
 	}
 
+	log.Printf("schedule: %v", schedule)
 	return schedule, nil
 
 }
