@@ -12,15 +12,16 @@ import (
 type StorageRepository interface {
 	CreateSchedule(schedule models.ScheduleRequest) (int64, error)
 	GetSchedulesIDs(userID int64) ([]int64, error)
-	NextTakings(interval time.Duration, id int64) ([]models.Taking, error)
+	NextTakings(id int64) ([]models.Taking, error)
 	GetSchedule(userID, scheduleID int64) (models.ScheduleResponse, error)
 }
 
 type Storage struct {
-	db *sql.DB
+	db       *sql.DB
+	interval time.Duration
 }
 
-func New(dbCfg config.DB) (StorageRepository, error) {
+func New(dbCfg config.DB, interval time.Duration) (StorageRepository, error) {
 	const operation = "storage.pg.new"
 
 	DSN := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
@@ -43,7 +44,8 @@ func New(dbCfg config.DB) (StorageRepository, error) {
 		return nil, fmt.Errorf("%s: %w", operation, err)
 	}
 
-	return &Storage{db: db}, nil
+	return &Storage{db: db,
+		interval: interval}, nil
 }
 
 func (s *Storage) CreateSchedule(schedule models.ScheduleRequest) (int64, error) {
@@ -67,13 +69,13 @@ func (s *Storage) GetSchedulesIDs(userID int64) ([]int64, error) {
 	const operation = "storage.pg.GetSchedulesIDs"
 	stmt, err := s.db.Prepare(getSchedulesQuery)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", operation, err)
+		return []int64{}, fmt.Errorf("%s: %w", operation, err)
 	}
 	defer stmt.Close()
 
 	rows, err := stmt.Query(userID, time.Now().Format("2006-01-02"))
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", operation, err)
+		return []int64{}, fmt.Errorf("%s: %w", operation, err)
 	}
 	defer rows.Close()
 
@@ -83,19 +85,19 @@ func (s *Storage) GetSchedulesIDs(userID int64) ([]int64, error) {
 
 		err := rows.Scan(&scheduleID)
 		if err != nil {
-			return nil, fmt.Errorf("%s: %w", operation, err)
+			return []int64{}, fmt.Errorf("%s: %w", operation, err)
 		}
 		schedulesIDs = append(schedulesIDs, scheduleID)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("%s: %w", operation, err)
+		return []int64{}, fmt.Errorf("%s: %w", operation, err)
 	}
 
 	return schedulesIDs, nil
 }
 
-func (s *Storage) NextTakings(interval time.Duration, id int64) ([]models.Taking, error) {
+func (s *Storage) NextTakings(id int64) ([]models.Taking, error) {
 	const operation = "storage.pg.NextTakings"
 
 	stmt, err := s.db.Prepare(getNextTakingsQuery)
@@ -104,7 +106,7 @@ func (s *Storage) NextTakings(interval time.Duration, id int64) ([]models.Taking
 	}
 	defer stmt.Close()
 
-	rows, err := stmt.Query(time.Now().Format("15:04"), time.Now().Add(interval).Format("15:04"), id)
+	rows, err := stmt.Query(time.Now().Format("15:04"), time.Now().Add(s.interval).Format("15:04"), id)
 	if err != nil {
 		return []models.Taking{}, fmt.Errorf("%s: %w", operation, err)
 	}
@@ -142,12 +144,19 @@ func (s *Storage) GetSchedule(userID, scheduleID int64) (models.ScheduleResponse
 	}
 	defer rows.Close()
 
+	if !rows.Next() {
+		return models.ScheduleResponse{}, sql.ErrNoRows
+	}
+
 	var schedule models.ScheduleResponse
 	for rows.Next() {
 		var rawTakingTime time.Time
-		err := rows.Scan(&schedule.MedicineName, &schedule.StartDate, &schedule.EndDate, &schedule.UserID, &rawTakingTime)
+		err := rows.Scan(&schedule.ID, &schedule.MedicineName, &schedule.StartDate, &schedule.EndDate, &schedule.UserID, &rawTakingTime)
 		if err != nil {
 			return models.ScheduleResponse{}, fmt.Errorf("%s: %w", operation, err)
+		}
+		if schedule.ID == 0 {
+			return models.ScheduleResponse{}, nil
 		}
 
 		takingTime := rawTakingTime.Format("15:04")

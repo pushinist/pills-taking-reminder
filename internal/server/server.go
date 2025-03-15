@@ -23,9 +23,9 @@ func NewServer(service service.StorageService) *Server {
 
 func (s *Server) RegisterRoutes() {
 	s.router.Post("/schedule", s.postScheduleHandler)
-	s.router.Get("/schedules", s.getSchedulesHandler)
-	//s.router.Get("/schedule", getScheduleHandler)
-	//s.router.Get("/next_takings", getNextTakingsHandler)
+	s.router.Get("/schedules", s.getSchedulesIDsHandler)
+	s.router.Get("/schedule", s.getScheduleHandler)
+	s.router.Get("/next_takings", s.getNextTakingsHandler)
 }
 
 func (s *Server) Run(addr string) error {
