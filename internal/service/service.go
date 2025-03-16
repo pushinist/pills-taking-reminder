@@ -4,23 +4,17 @@ import (
 	"fmt"
 	"log"
 	"pills-taking-reminder/internal/models"
+	"pills-taking-reminder/internal/server"
 	"pills-taking-reminder/internal/storage/pg"
 	"time"
 )
-
-type StorageService interface {
-	CreateSchedule(schedule models.ScheduleRequest) (int64, error)
-	GetSchedulesIDs(userID int64) ([]int64, error)
-	GetNextTakings(id int64) ([]models.Taking, error)
-	GetSchedule(userID, scheduleID int64) (models.ScheduleResponse, error)
-}
 
 type Service struct {
 	repo     pg.StorageRepository
 	interval time.Duration
 }
 
-func NewService(repo pg.StorageRepository) StorageService {
+func NewService(repo pg.StorageRepository) server.StorageService {
 	return &Service{repo: repo}
 }
 
