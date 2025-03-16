@@ -32,7 +32,7 @@ func (s *Server) postScheduleHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := s.service.CreateSchedule(schedule)
 	if err != nil {
 		log.Printf("error: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusConflict)
 		return
 	}
 
