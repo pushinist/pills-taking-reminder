@@ -21,7 +21,7 @@ namespace config {
 "config.DB" *-- "config.Config"
 "config.HTTPServer" *-- "config.Config"
 
-namespace models {
+namespace models << Entity Layer>> {
     class ScheduleRequest {
         + MedicineName string
         + Frequency int
@@ -43,7 +43,7 @@ namespace models {
 }
 
 
-namespace pg {
+namespace pg << Repository Layer >>{
     class Storage {
         - db *sql.DB
         - interval time.Duration
@@ -62,7 +62,7 @@ namespace pg {
 }
 "pg.StorageRepository" <|-- "pg.Storage"
 
-namespace server {
+namespace server << Framework and Drivers layer (или все-таки Interface Adapter layer)>>{
     class Server {
         - router *chi.Mux
         - service StorageService

@@ -1,0 +1,23 @@
+@startuml
+!pragma layout smetana
+
+entity schedules {
+  *schedule_id : SERIAL <<PK>>
+  --
+  medicine_name : TEXT
+  start_date : DATE <<NOT NULL>>
+  end_date : DATE
+  user_id : INTEGER
+  --
+  unique(medicine_name, user_id)
+}
+
+entity takings {
+  *taking_id : SERIAL <<PK>>
+  --
+  schedule_id : INTEGER <<FK>>
+  taking_time : TIME <<NOT NULL>>
+}
+
+schedules ||--o{ takings
+@enduml
