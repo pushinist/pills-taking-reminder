@@ -1,0 +1,101 @@
+@startuml
+!pragma layout smetana
+namespace config {
+    class Config {
+        + Env string
+        + NearTakingInterval time.Duration
+    }
+    class DB {
+        + Host string
+        + Port string
+        + Username string
+        + Password string
+        + Name string
+    }
+    class HTTPServer {
+        + Address string
+        + Timeout time.Duration
+        + IdleTimeout time.Duration
+    }
+}
+"config.DB" *-- "config.Config"
+"config.HTTPServer" *-- "config.Config"
+
+namespace models {
+    class ScheduleRequest {
+        + MedicineName string
+        + Frequency int
+        + Duration int
+        + UserID int64
+    }
+    class ScheduleResponse {
+        + ID int64
+        + MedicineName string
+        + StartDate string
+        + EndDate string
+        + UserID int64
+        + TakingTime []string
+    }
+    class Taking {
+        + MedicineName string
+        + TakingTime string
+    }
+}
+
+
+namespace pg {
+    class Storage {
+        - db *sql.DB
+        - interval time.Duration
+
+        + CreateSchedule(schedule models.ScheduleRequest) (int64, error)
+        + GetSchedulesIDs(userID int64) ([]int64, error)
+        + NextTakings(id int64) ([]models.Taking, error)
+        + GetSchedule(userID int64, scheduleID int64) (models.ScheduleResponse, error)
+    }
+    interface StorageRepository  {
+        + CreateSchedule(schedule models.ScheduleRequest) (int64, error)
+        + GetSchedulesIDs(userID int64) ([]int64, error)
+        + NextTakings(id int64) ([]models.Taking, error)
+        + GetSchedule(userID int64, scheduleID int64) (models.ScheduleResponse, error)
+    }
+}
+"pg.StorageRepository" <|-- "pg.Storage"
+
+namespace server {
+    class Server {
+        - router *chi.Mux
+        - service StorageService
+
+        - postScheduleHandler(w http.ResponseWriter, r *http.Request)
+        - getSchedulesIDsHandler(w http.ResponseWriter, r *http.Request)
+        - getScheduleHandler(w http.ResponseWriter, r *http.Request)
+        - getNextTakingsHandler(w http.ResponseWriter, r *http.Request)
+
+        + RegisterRoutes()
+        + Run(addr string) error
+    }
+    interface StorageService  {
+        + CreateSchedule(schedule models.ScheduleRequest) (int64, error)
+        + GetSchedulesIDs(userID int64) ([]int64, error)
+        + GetNextTakings(id int64) ([]models.Taking, error)
+        + GetSchedule(userID int64, scheduleID int64) (models.ScheduleResponse, error)
+    }
+}
+
+
+namespace service {
+    class Service {
+        - repo pg.StorageRepository
+        - interval time.Duration
+
+        + CreateSchedule(schedule models.ScheduleRequest) (int64, error)
+        + GetSchedulesIDs(userID int64) ([]int64, error)
+        + GetSchedule(userID int64, scheduleID int64) (models.ScheduleResponse, error)
+        + GetNextTakings(id int64) ([]models.Taking, error)
+    }
+}
+
+"server.StorageService" <|-- "service.Service"
+
+@enduml
