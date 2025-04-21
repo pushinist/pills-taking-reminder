@@ -1,0 +1,48 @@
+name: Generate API
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'api/openapi.yaml'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - 'api/openapi.yaml'
+  workflow_dispatch:
+    
+  
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Go Setup
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+
+      - name: Just setup
+        uses: extractions/setup-just@v1
+
+      - name: oapi-codegen setup
+        run: go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
+
+      - name: codegen
+        run: just generate-api
+
+      - name: Commit changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add ./internal/api/
+          git diff --staged --quiet || git commit -m "Codegen commit"
+
+      - name: Push commit
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
