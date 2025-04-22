@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package ptr;
+
+option go_package = "pills-taking-reminder/internal/grpc/pb";
+
+service PTRService {
+  rpc CreateSchedule(ScheduleRequest) returns (ScheduleIDResponse) {}
+
+  rpc GetSchedule(ScheduleIDRequest) returns (ScheduleResponse) {}
+
+  rpc GetSchedulesIDs(UserIDRequest) returns (ScheduleIDList) {}
+
+  rpc GetNextTakings(UserIDRequest) returns (TakingList) {}
+}
+
+message ScheduleRequest {
+  string medicine_name = 1;
+  int32 frequency = 2;
+  int32 duration = 3;
+  int64 user_id = 4;
+}
+
+message ScheduleIDResponse {
+  int64 schedule_id = 1;
+}
+
+message ScheduleIDRequest {
+  int64 user_id = 1;
+  int64 schedule_id = 2;
+}
+
+message UserIDRequest {
+  int64 user_id = 1;
+}
+
+message ScheduleResponse {
+  int64 id = 1;
+  string medicine_name = 2;
+  string start_date = 3;
+  string end_date = 4;
+  int64 user_id = 5;
+  repeated string taking_time = 6;
+}
+
+message ScheduleIDList {
+  repeated int64 schedule_ids = 1;
+}
+
+message Taking {
+  string medicine_name = 1;
+  string taking_time = 2;
+}
+
+message TakingList {
+  repeated Taking takings = 1;
+}

@@ -1,10 +1,13 @@
 package server
 
 import (
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	"context"
 	"net/http"
 	"pills-taking-reminder/internal/models"
+	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 type StorageService interface {
@@ -17,6 +20,7 @@ type StorageService interface {
 type Server struct {
 	router  *chi.Mux
 	service StorageService
+	server  *http.Server
 }
 
 func NewServer(service StorageService) *Server {
@@ -36,5 +40,20 @@ func (s *Server) RegisterRoutes() {
 }
 
 func (s *Server) Run(addr string) error {
-	return http.ListenAndServe(addr, s.router)
+
+	s.server = &http.Server{
+		Addr:    addr,
+		Handler: s.router,
+	}
+
+	return s.server.ListenAndServe()
+}
+
+func (s *Server) Stop() {
+	if s.server != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
+		defer cancel()
+
+		s.server.Shutdown(ctx)
+	}
 }

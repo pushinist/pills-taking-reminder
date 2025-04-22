@@ -1,24 +1,30 @@
 package config
 
 import (
-	"github.com/ilyakaznacheev/cleanenv"
-	"github.com/joho/godotenv"
 	"log"
 	"os"
 	"time"
+
+	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
 	Env string `yaml:"env" env-required:"true"`
 	HTTPServer
+	GRPCServer
 	DB
 	NearTakingInterval time.Duration `yaml:"near_taking_interval" env-default:"60m"`
 }
 
 type HTTPServer struct {
-	Address     string        `yaml:"address" env-default:"localhost:8080"`
+	Address     string        `yaml:"address" env-default:":8080"`
 	Timeout     time.Duration `yaml:"timeout" env-default:"5s"`
 	IdleTimeout time.Duration `yaml:"idle_timeout" env-default:"30s"`
+}
+
+type GRPCServer struct {
+	Address string `yaml:"address" env-default:":8081"`
 }
 
 type DB struct {
