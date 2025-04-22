@@ -31,9 +31,17 @@ jobs:
       - name: oapi-codegen setup
         run: go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
 
-      - name: codegen
-        run: just generate-api
+      - name: protoc setup
+        run: |
+         sudo apt-get update
+         sudo apt-get install -y protobuf-compiler
+         go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+         go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+        
 
+      - name: codegen
+        run: just generate-all
+        
       - name: Commit changes
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
