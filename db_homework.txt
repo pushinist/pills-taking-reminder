@@ -1,0 +1,147 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE TYPE department_type AS ENUM('backend', 'frontend', 'ios', 'android');
+
+CREATE TABLE IF NOT EXISTS developers(
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL,
+    department department_type,
+    geolocation POINT CHECK (
+        (geolocation)[0] BETWEEN -180 AND 180 AND (geolocation)[1] BETWEEN -90 AND 90
+    ),
+    last_known_ip INET CHECK (
+        family(last_known_ip) BETWEEN 4 AND 6 AND last_known_ip::TEXT NOT LIKE '0.%' AND LAST_KNOWN_IP::TEXT NOT LIKE '255.255.255.255'
+    ),
+    is_available BOOLEAN DEFAULT FALSE     
+);
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+postgres=# SELECT * FROM developers;
+                  id                  |       name        | department |                geolocation                |  last_known_ip  | is_available
+--------------------------------------+-------------------+------------+-------------------------------------------+-----------------+--------------
+ 55593659-8613-4108-bb52-07eb7cd97fdb | Mary Jones        | backend    | (-70.7379560859358,11.741329322883615)    | 223.41.54.12    | f
+ 80d6976a-bc47-4fe8-bee4-96fd1e85a1b0 | John Johnson      | ios        | (61.56609560213346,1.6059764530082106)    | 248.188.85.48   | t
+ 28021c8f-eb7f-4ce3-aa3e-23896ea773aa | John Smith        | backend    | (77.0377354425907,73.25452156019293)      | 40.196.72.25    | f
+ 1b1c1405-a626-4c40-a2c9-327c55b318a9 | Patricia Brown    | android    | (-178.95111533341867,36.10107381102043)   | 156.30.31.123   | t
+ ded18322-66c7-4cda-a285-2de024f6b550 | Mary Williams     | ios        | (-41.431292056290886,36.289283892090566)  | 184.86.200.19   | f
+ 8ada5100-c34d-46d2-9ae8-1fa808b790e4 | Mary Williams     | android    | (-114.61765528471813,-78.36038343318009)  | 143.13.67.20    | f
+ 17acd76c-313e-4ab3-9a33-97dfdac800de | Patricia Williams | android    | (108.38330248407783,-19.003922719762272)  | 200.241.70.100  | t
+ 729792f2-4610-4aad-9a89-7d46249cf4a0 | Mary Brown        | backend    | (120.99258091148494,66.21743941936975)    | 13.250.25.161   | f
+ 9ae802a2-50e8-48d6-bd4e-f64971113675 | Patricia Smith    | backend    | (-157.12635311345187,57.49935347450301)   | 249.106.205.183 | f
+ 9bbf1ab9-b1c9-42fa-98a7-ed61381cb9ef | Robert Brown      | backend    | (157.47175947823212,-56.658709636004595)  | 122.182.218.164 | t
+ 9eb95f44-7b4b-42e1-aeb3-54fdefab19c0 | Patricia Brown    | android    | (-137.43235459067893,45.11294857267819)   | 53.25.205.215   | t
+ 2f2beb92-4a61-4d1c-949f-2b4c3ce5cd61 | James Johnson     | android    | (132.17859414752525,-76.26929422112005)   | 227.134.187.165 | t
+ bd861646-6ac9-4664-ab11-03cf02a7cab6 | Patricia Williams | ios        | (147.1579089925442,-70.30466900917268)    | 173.211.40.164  | f
+ f7dfbe72-f156-420c-8181-166d749e4729 | John Johnson      | backend    | (-143.09709495413358,20.583139238357873)  | 150.119.164.99  | t
+ abb394d5-256a-4b4a-92c2-3ecaa4b5c63c | John Johnson      | backend    | (-131.45580743672224,-15.078168144031281) | 55.231.98.203   | t
+ 3b0972d9-5fec-4c35-9ad6-a2c7b8294361 | Mary Jones        | backend    | (63.120136286582834,13.215191769103598)   | 47.26.120.206   | f
+ a2f66a02-e43b-4b56-a44e-4f6d878a8d92 | John Smith        | android    | (103.87999558177631,25.0116006030769)     | 51.0.74.102     | t
+ 5a03bcf6-b31b-4b72-a34d-5c1ad64764cd | John Brown        | frontend   | (-56.770220432892074,13.17560371291232)   | 3.10.45.138     | f
+ 6d18cd80-699a-4d6a-97d9-edfee3d2bf18 | James Williams    | ios        | (-134.49387177657425,-43.83383843873335)  | 182.182.229.180 | t
+ 28df500f-0178-4f8b-b418-6d7f388e8563 | Robert Williams   | android    | (73.5675912146921,-52.27486382140046)     | 86.128.139.83   | f
+(20 rows)
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Script located at "./generate_developers.sql"
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+postgres=# EXPLAIN ANALYZE SELECT * FROM developers WHERE name LIKE 'James%';
+                                                 QUERY PLAN
+-------------------------------------------------------------------------------------------------------------
+ Seq Scan on developers  (cost=0.00..128.15 rows=1063 width=57) (actual time=0.010..0.734 rows=1063 loops=1)
+   Filter: (name ~~ 'James%'::text)
+   Rows Removed by Filter: 4389
+ Planning Time: 0.425 ms
+ Execution Time: 0.861 ms
+(5 rows)
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+postgres=# EXPLAIN ANALYZE SELECT * FROM developers WHERE department = 'backend';
+                                                 QUERY PLAN
+-------------------------------------------------------------------------------------------------------------
+ Seq Scan on developers  (cost=0.00..128.15 rows=1357 width=57) (actual time=0.008..0.508 rows=1357 loops=1)
+   Filter: (department = 'backend'::department_type)
+   Rows Removed by Filter: 4095
+ Planning Time: 0.099 ms
+ Execution Time: 0.576 ms
+(5 rows)
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+postgres=# EXPLAIN ANALYZE SELECT * FROM developers WHERE last_known_ip = '192.168.1.10';
+                                              QUERY PLAN
+-------------------------------------------------------------------------------------------------------
+ Seq Scan on developers  (cost=0.00..128.15 rows=1 width=57) (actual time=1.196..1.197 rows=0 loops=1)
+   Filter: (last_known_ip = '192.168.1.10'::inet)
+   Rows Removed by Filter: 5452
+ Planning Time: 0.089 ms
+ Execution Time: 1.217 ms
+(5 rows)
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+postgres=# EXPLAIN ANALYZE SELECT * FROM developers WHERE is_avaliable = TRUE;
+                                                 QUERY PLAN
+-------------------------------------------------------------------------------------------------------------
+ Seq Scan on developers  (cost=0.00..114.52 rows=2704 width=57) (actual time=0.008..0.458 rows=2704 loops=1)
+   Filter: is_avaliable
+   Rows Removed by Filter: 2748
+ Planning Time: 0.048 ms
+ Execution Time: 0.557 ms
+(5 rows)
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+SELECT * FROM developers WHERE (point(20.5, 54.7) <-> geolocation) * 111 <= 10;
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+CREATE INDEX idx_developers_name ON developers (name);
+CREATE INDEX idx_developers_department ON developers (department);
+CREATE INDEX idx_developers_last_known_ip ON developers (last_known_ip);
+CREATE INDEX idx_developers_is_available ON developers (is_available);
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+postgres=# EXPLAIN ANALYZE SELECT * FROM developers WHERE name LIKE 'James%';
+                                                 QUERY PLAN
+-------------------------------------------------------------------------------------------------------------
+ Seq Scan on developers  (cost=0.00..128.15 rows=1063 width=57) (actual time=0.016..0.987 rows=1063 loops=1)
+   Filter: (name ~~ 'James%'::text)
+   Rows Removed by Filter: 4389
+ Planning Time: 0.083 ms
+ Execution Time: 1.065 ms
+(5 rows)
+
+postgres=# EXPLAIN ANALYZE SELECT * FROM developers WHERE department = 'backend';
+                                                               QUERY PLAN
+-----------------------------------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on developers  (cost=18.80..95.76 rows=1357 width=57) (actual time=0.067..0.324 rows=1357 loops=1)
+   Recheck Cond: (department = 'backend'::department_type)
+   Heap Blocks: exact=60
+   ->  Bitmap Index Scan on idx_developers_department  (cost=0.00..18.46 rows=1357 width=0) (actual time=0.051..0.051 rows=1357 loops=1)
+         Index Cond: (department = 'backend'::department_type)
+ Planning Time: 0.088 ms
+ Execution Time: 0.397 ms
+(7 rows)
+
+postgres=# EXPLAIN ANALYZE SELECT * FROM developers WHERE last_known_ip = '192.168.1.10';
+                                                                QUERY PLAN
+------------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using idx_developers_last_known_ip on developers  (cost=0.28..8.30 rows=1 width=57) (actual time=0.014..0.015 rows=0 loops=1)
+   Index Cond: (last_known_ip = '192.168.1.10'::inet)
+ Planning Time: 0.068 ms
+ Execution Time: 0.027 ms
+(4 rows)
+
+postgres=# EXPLAIN ANALYZE SELECT * FROM developers WHERE is_avaliable = TRUE;
+                                                 QUERY PLAN
+-------------------------------------------------------------------------------------------------------------
+ Seq Scan on developers  (cost=0.00..114.52 rows=2704 width=57) (actual time=0.021..1.026 rows=2704 loops=1)
+   Filter: is_avaliable
+   Rows Removed by Filter: 2748
+ Planning Time: 0.126 ms
+ Execution Time: 1.219 ms
+(5 rows)
