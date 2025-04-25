@@ -22,7 +22,7 @@ func main() {
 	log := logger.SetupLogger(cfg.Env)
 	log.Info("logger initialized, starting pills-taking-reminder", slog.String("env", cfg.Env))
 
-	log.Info("config", slog.Any("cfg", cfg))
+	log.Info("config", slog.Any("", cfg))
 
 	db, err := pg.New(cfg.DB, cfg.NearTakingInterval)
 	if err != nil {
@@ -31,7 +31,7 @@ func main() {
 	}
 	log.Info("storage initialized")
 
-	service := s.NewService(db)
+	service := s.NewService(db, log)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
