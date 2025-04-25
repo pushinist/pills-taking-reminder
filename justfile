@@ -17,3 +17,11 @@ clean-restapi:
 
 clean-grpc:
     rm -rf ./internal/grpc/pb
+
+
+build:
+    go build -o ./bin ./cmd/pills-taking-reminder/main.go 
+
+run: build
+    ./bin/main
+
