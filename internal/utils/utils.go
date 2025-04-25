@@ -33,6 +33,11 @@ func RoundTime(timeString string) (string, error) {
 }
 
 func CountTakings(frequency int) ([]string, error) {
+
+	if frequency <= 0 || frequency > 15 {
+		return nil, fmt.Errorf("frequency must be between 1 and 15")
+	}
+
 	startTime, err := time.Parse("15:04", startTimeString)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse start time: %w", err)
