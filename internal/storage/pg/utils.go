@@ -3,20 +3,40 @@ package pg
 import (
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"pills-taking-reminder/internal/models"
 	"pills-taking-reminder/internal/utils"
 	"time"
 )
 
-func createTable(db *sql.DB, statement, operation string) error {
+func createTable(db *sql.DB, statement, operation string, logger *slog.Logger) error {
 	stmt, err := db.Prepare(statement)
+
+	logger.Info("creating table in db...",
+		slog.String("operation", operation),
+		slog.String("statement", statement))
+
 	if err != nil {
+		logger.Error("error creating table in db!",
+			slog.String("operation", operation),
+			slog.String("statement", statement),
+			slog.String("error", err.Error()))
+
 		return fmt.Errorf("%s: %w", operation, err)
 	}
 	_, err = stmt.Exec()
 	if err != nil {
+		logger.Error("error creating table in db!",
+			slog.String("operation", operation),
+			slog.String("statement", statement),
+			slog.String("error", err.Error()))
+
 		return fmt.Errorf("%s: %w", operation, err)
 	}
+
+	logger.Info("table was successfully created!",
+		slog.String("operation", operation),
+		slog.String("statement", statement))
 	return nil
 }
 

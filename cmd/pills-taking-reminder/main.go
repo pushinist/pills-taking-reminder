@@ -24,7 +24,7 @@ func main() {
 
 	log.Info("config", slog.Any("", cfg))
 
-	db, err := pg.New(cfg.DB, cfg.NearTakingInterval)
+	db, err := pg.New(cfg.DB, log, cfg.NearTakingInterval)
 	if err != nil {
 		log.Error("failed to initialize storage", slog.String("error", err.Error()))
 		os.Exit(1)
