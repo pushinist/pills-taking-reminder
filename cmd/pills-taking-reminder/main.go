@@ -22,7 +22,7 @@ func main() {
 	log := logger.SetupLogger(cfg.Env)
 	log.Info("logger initialized, starting pills-taking-reminder", slog.String("env", cfg.Env))
 
-	log.Info("config", slog.Any("", cfg))
+	log.Info("", slog.Any("config", cfg))
 
 	db, err := pg.New(cfg.DB, log, cfg.NearTakingInterval)
 	if err != nil {
