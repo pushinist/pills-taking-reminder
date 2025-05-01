@@ -2,14 +2,18 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
 	"pills-taking-reminder/internal/grpc/pb"
 	"pills-taking-reminder/internal/models"
+	"pills-taking-reminder/internal/usecase"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 )
 
 type Service interface {
@@ -21,15 +25,40 @@ type Service interface {
 
 type GRPCServer struct {
 	pb.UnimplementedPTRServiceServer
-	service Service
-	logger  *slog.Logger
-	server  *grpc.Server
+	scheduleUseCase *usecase.ScheduleUseCase
+	logger          *slog.Logger
+	server          *grpc.Server
 }
 
-func NewGRPCServer(service Service, logger *slog.Logger) *GRPCServer {
+func NewGRPCServer(useCase *usecase.ScheduleUseCase, logger *slog.Logger) *GRPCServer {
+
+	// router.Use(func(next http.Handler) http.Handler {
+	// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// 		traceID := r.Header.Get("X-TRACE-ID")
+	// 		if traceID == "" {
+	// 			traceID = uuid.New().String()
+	// 		}
+	// 		w.Header().Set("X-TRACE-ID", traceID)
+
+	// 		logger.Info("request received",
+	// 			slog.String("method", r.Method),
+	// 			slog.String("path", r.URL.Path),
+	// 			slog.String("remote_addr", r.RemoteAddr),
+	// 			slog.String("X-TRACE-ID", traceID))
+
+	// 		start := time.Now()
+	// 		next.ServeHTTP(w, r)
+
+	// 		logger.Info("request completed",
+	// 			slog.String("method", r.Method),
+	// 			slog.String("path", r.URL.Path),
+	// 			slog.String("X-TRACE-ID", traceID),
+	// 			slog.Duration("duration", time.Since(start)))
+	// 	})
+	// })
 	return &GRPCServer{
-		service: service,
-		logger:  logger,
+		scheduleUseCase: useCase,
+		logger:          logger,
 	}
 }
 
@@ -38,17 +67,24 @@ func (s *GRPCServer) CreateSchedule(ctx context.Context, req *pb.ScheduleRequest
 		slog.String("medicine", req.MedicineName),
 		slog.Int64("user_id", req.UserId))
 
-	schedule := models.ScheduleRequest{
+	input := usecase.ScheduleInput{
 		MedicineName: req.MedicineName,
 		Frequency:    int(req.Frequency),
 		Duration:     int(req.Duration),
 		UserID:       req.UserId,
 	}
 
-	id, err := s.service.CreateSchedule(schedule)
+	id, err := s.scheduleUseCase.CreateSchedule(ctx, input)
 	if err != nil {
-		s.logger.Error("error creating schedule in grpc", slog.String("error", err.Error()))
-		return nil, err
+		switch {
+		case errors.Is(err, usecase.ErrInvalidInput):
+			return nil, status.Error(codes.InvalidArgument, "Invalid input parameters")
+		case errors.Is(err, usecase.ErrScheduleExists):
+			return nil, status.Error(codes.AlreadyExists, "Schedule already exists")
+		default:
+			s.logger.Error("failed to create schedule in gRPC", slog.String("error", err.Error()))
+			return nil, status.Error(codes.Internal, "Internal server error")
+		}
 	}
 	return &pb.ScheduleIDResponse{
 		ScheduleId: id,
@@ -59,10 +95,16 @@ func (s *GRPCServer) GetSchedulesIDs(ctx context.Context, req *pb.UserIDRequest)
 	s.logger.Info("got getting schedule ids request in grpc",
 		slog.Int64("user_id", req.UserId))
 
-	scheduleIDs, err := s.service.GetSchedulesIDs(req.UserId)
+	scheduleIDs, err := s.scheduleUseCase.GetScheduleIDs(ctx, req.UserId)
+
 	if err != nil {
-		s.logger.Error("error getting schedules ids in grpc", slog.String("error", err.Error()))
-		return nil, err
+		switch {
+		case errors.Is(err, usecase.ErrInvalidInput):
+			return nil, status.Error(codes.InvalidArgument, "Invalid input parameters")
+		default:
+			s.logger.Error("failed to get schedule IDs in gRPC", slog.String("error", err.Error()))
+			return nil, status.Error(codes.Internal, "Internal server error")
+		}
 	}
 	return &pb.ScheduleIDList{
 		ScheduleIds: scheduleIDs,
@@ -73,12 +115,18 @@ func (s *GRPCServer) GetNextTakings(ctx context.Context, req *pb.UserIDRequest) 
 	s.logger.Info("got GetNextTakings request in groc",
 		slog.Int64("user_id", req.UserId))
 
-	takings, err := s.service.GetNextTakings(req.UserId)
+	takings, err := s.scheduleUseCase.GetNextTakings(ctx, req.UserId)
 
 	if err != nil {
-		s.logger.Error("error getting next takings in grpc", slog.String("error", err.Error()))
-		return nil, err
+		switch {
+		case errors.Is(err, usecase.ErrInvalidInput):
+			return nil, status.Error(codes.InvalidArgument, "Invalid input parameters")
+		default:
+			s.logger.Error("error getting next takings in grpc", slog.String("error", err.Error()))
+			return nil, status.Error(codes.Internal, "Internal server error")
+		}
 	}
+
 	pbTakings := make([]*pb.Taking, len(takings))
 	for i, taking := range takings {
 		pbTakings[i] = &pb.Taking{
@@ -98,11 +146,18 @@ func (s *GRPCServer) GetSchedule(ctx context.Context, req *pb.ScheduleIDRequest)
 		slog.Int64("user_id", req.UserId),
 		slog.Int64("schedule_id", req.ScheduleId))
 
-	schedule, err := s.service.GetSchedule(req.UserId, req.ScheduleId)
+	schedule, err := s.scheduleUseCase.GetSchedule(ctx, req.UserId, req.ScheduleId)
 
 	if err != nil {
-		s.logger.Error("error getting schedule in grpc", slog.String("error", err.Error()))
-		return nil, err
+		switch {
+		case errors.Is(err, usecase.ErrScheduleNotFound):
+			return nil, status.Error(codes.NotFound, "Schedule was not found")
+		case errors.Is(err, usecase.ErrInvalidInput):
+			return nil, status.Error(codes.InvalidArgument, "Invalid input parameters")
+		default:
+			s.logger.Error("failed to get schedule in gRPC", slog.String("error", err.Error()))
+			return nil, status.Error(codes.Internal, "Internal server error")
+		}
 	}
 
 	return &pb.ScheduleResponse{
@@ -111,7 +166,7 @@ func (s *GRPCServer) GetSchedule(ctx context.Context, req *pb.ScheduleIDRequest)
 		StartDate:    schedule.StartDate,
 		EndDate:      schedule.EndDate,
 		UserId:       schedule.UserID,
-		TakingTime:   schedule.TakingTime,
+		TakingTime:   schedule.TakingTimes,
 	}, nil
 }
 
