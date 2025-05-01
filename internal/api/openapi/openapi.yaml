@@ -1,0 +1,229 @@
+openapi: 3.1.0
+
+info:
+  title: Pills Taking Reminder
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: local
+paths:
+  /schedule:
+    post:
+      summary: Creates new schedule
+      operationId: createSchedule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduleRequest"
+      responses:
+        '200':
+          description: Schedule created
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int64
+                description: Created schedule ID
+        '400':
+          description: Invalid request params
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Schedule already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      summary: Get schedule by id
+      operationId: getSchedule
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          description: User ID
+          schema:
+            type: integer
+            format: int64
+        - name: schedule_id
+          in: query
+          required: true
+          description: Schedule ID
+          schema:
+            type: integer
+            format: int64
+      responses: 
+        '200':
+          description: Schedule info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleResponse'
+        '400':
+          description: Invalid request params
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Schedule not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /schedules:
+    get:
+      summary: Get all schedules for user
+      operationId: getSchedulesIDs
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          description: User ID
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: List of schedule IDs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: integer
+                  format: int64
+        '400':
+          description: Invalid request params
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /next_takings:
+    get:
+      summary: Get next takings for user
+      operationId: getNextTakings
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          description: ID of the user
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: List of next takings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Taking'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    ScheduleRequest:
+      type: object
+      required:
+        - medicine_name
+        - frequency
+        - user_id
+      properties:
+        medicine_name:
+          type: string
+          description: Name of the medicine
+          example: "Aspirin"
+        frequency:
+          type: integer
+          description: Number of times per day to take the medicine (1-15)
+          minimum: 1
+          maximum: 15
+          example: 3
+        duration:
+          type: integer
+          description: Duration in days (0 for infinite)
+          minimum: 0
+          example: 7
+        user_id:
+          type: integer
+          format: int64
+          description: ID of the user
+          example: 1
+    
+    ScheduleResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: ID of the schedule
+          example: 1
+        medicine_name:
+          type: string
+          description: Name of the medicine
+          example: "Aspirin"
+        start_date:
+          type: string
+          description: Start date of the schedule in format "DD Mon YYYY"
+          example: "21 Apr 2025"
+        end_date:
+          type: string
+          description: End date of the schedule in format "DD Mon YYYY" or "null"
+          example: "28 Apr 2025"
+        user_id:
+          type: integer
+          format: int64
+          description: ID of the user
+          example: 1
+        taking_time:
+          type: array
+          description: List of times to take the medicine
+          items:
+            type: string
+            format: HH:MM
+            example: "08:00"
+    
+    Taking:
+      type: object
+      properties:
+        medicine_name:
+          type: string
+          description: Name of the medicine
+          example: "Ibuprofen"
+        taking_time:
+          type: string
+          format: HH:MM
+          description: Time to take the medicine
+          example: "08:00"
+    
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
