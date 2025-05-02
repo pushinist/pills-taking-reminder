@@ -14,6 +14,6 @@ var (
 type ScheduleRepository interface {
 	Create(ctx context.Context, schedule *entities.Schedule) (int64, error)
 	GetByID(ctx context.Context, userID, scheduleID int64) (*entities.Schedule, error)
-	GetALLByUserID(ctx context.Context, userID int64) ([]int64, error)
+	GetSchedulesIDs(ctx context.Context, userID int64) ([]int64, error)
 	GetNextTakings(ctx context.Context, userID int64, interval string) ([]entities.Taking, error)
 }
