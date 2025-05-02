@@ -1,7 +1,7 @@
 generate-restapi: clean-restapi
     mkdir -p ./internal/api/http/generated
-    oapi-codegen -package api -generate types -o ./internal/api/http/models.go ./api/openapi/openapi.yaml
-    oapi-codegen -package api -generate chi-server -o ./internal/api/http/server.go ./api/openapi/openapi.yaml    
+    oapi-codegen -package api -generate types -o ./internal/api/http/generated/models.go ./api/openapi/openapi.yaml
+    oapi-codegen -package api -generate chi-server -o ./internal/api/http/generated/server.go ./api/openapi/openapi.yaml    
 
 generate-grpc: clean-grpc
     mkdir -p ./internal/api/grpc/pb
@@ -13,7 +13,7 @@ generate-grpc: clean-grpc
 generate-all: generate-restapi generate-grpc
 
 clean-restapi:
-    rm -f ./internal/api/http/server.go ./internal/api/http/models.go
+    rm -f ./internal/api/http/generated/server.go ./internal/api/http/generated/models.go
 
 clean-grpc:
     rm -rf ./internal/api/grpc/pb
