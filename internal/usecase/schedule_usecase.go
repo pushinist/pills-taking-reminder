@@ -109,7 +109,7 @@ func (uc *ScheduleUseCase) GetScheduleIDs(ctx context.Context, userID int64) ([]
 		return nil, ErrInvalidInput
 	}
 
-	ids, err := uc.scheduleRepo.GetALLByUserID(ctx, userID)
+	ids, err := uc.scheduleRepo.GetSchedulesIDs(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get schedule IDs: %w", err)
 	}
