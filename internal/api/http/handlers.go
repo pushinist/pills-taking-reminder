@@ -5,7 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
-	"pills-taking-reminder/api/dto"
+	"pills-taking-reminder/internal/api/dto"
 	"pills-taking-reminder/internal/usecase"
 	"strconv"
 
