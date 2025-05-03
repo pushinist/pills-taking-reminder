@@ -60,11 +60,13 @@ func (h *ScheduleHandler) CreateSchedule(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		switch {
 		case errors.Is(err, usecase.ErrInvalidInput):
+			h.logger.Debug("schedule creation request rejected in http", slog.String("error", err.Error()))
 			h.respondWithError(w, http.StatusBadRequest, "Invalid input parameters")
 		case errors.Is(err, usecase.ErrScheduleExists):
+			h.logger.Debug("schedule creation request rejected in http", slog.String("error", err.Error()))
 			h.respondWithError(w, http.StatusConflict, "Schedule already exists")
 		default:
-			h.logger.Error("failed to create schedule", slog.String("error", err.Error()))
+			h.logger.Error("failed to create schedule in http", slog.String("error", err.Error()))
 			h.reposndWithJSON(w, http.StatusInternalServerError, "Failed to create schedule")
 		}
 		return
@@ -93,11 +95,13 @@ func (h *ScheduleHandler) GetSchedule(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, usecase.ErrScheduleNotFound):
+			h.logger.Debug("request for getting schedule rejected in http", slog.String("error", err.Error()))
 			h.respondWithError(w, http.StatusNotFound, "Schedule was not found")
 		case errors.Is(err, usecase.ErrInvalidInput):
+			h.logger.Debug("request for getting schedule rejected in http", slog.String("error", err.Error()))
 			h.respondWithError(w, http.StatusBadRequest, "Invalid input parameters")
 		default:
-			h.logger.Error("failed to get schedule", slog.String("error", err.Error()))
+			h.logger.Error("failed to get schedule in http", slog.String("error", err.Error()))
 			h.respondWithError(w, http.StatusInternalServerError, "Failed to get schedule")
 		}
 		return
@@ -128,9 +132,10 @@ func (h *ScheduleHandler) GetScheduleIDs(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		switch {
 		case errors.Is(err, usecase.ErrInvalidInput):
+			h.logger.Debug("request for getting schedule IDs rejected in http", slog.String("error", err.Error()))
 			h.respondWithError(w, http.StatusBadRequest, "Invalid request parameters")
 		default:
-			h.logger.Error("failed to get schedule IDs", slog.String("error", err.Error()))
+			h.logger.Error("failed to get schedule IDs in http", slog.String("error", err.Error()))
 			h.respondWithError(w, http.StatusInternalServerError, "Failed to get schedule IDs")
 		}
 		return
@@ -152,9 +157,10 @@ func (h *ScheduleHandler) GetNextTakings(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		switch {
 		case errors.Is(err, usecase.ErrInvalidInput):
+			h.logger.Debug("request for getting next takings rejected in http", slog.String("error", err.Error()))
 			h.respondWithError(w, http.StatusBadRequest, "Invalid input parameters")
 		default:
-			h.logger.Error("failed to get next takings", slog.String("error", err.Error()))
+			h.logger.Error("failed to get next takings in http", slog.String("error", err.Error()))
 			h.respondWithError(w, http.StatusInternalServerError, "Failed to get next takings")
 		}
 		return

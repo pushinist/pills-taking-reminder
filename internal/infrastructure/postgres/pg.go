@@ -17,13 +17,6 @@ var (
 	ErrNotFound      = errors.New("schedule was not found")
 )
 
-// type StorageRepository interface {
-// 	CreateSchedule(schedule models.ScheduleRequest) (int64, error)
-// 	GetSchedulesIDs(userID int64) ([]int64, error)
-// 	NextTakings(id int64) ([]models.Taking, error)
-// 	GetSchedule(userID, scheduleID int64) (models.ScheduleResponse, error)
-// }
-
 type ScheduleRepository struct {
 	db       *sql.DB
 	logger   *slog.Logger
@@ -241,12 +234,12 @@ func (r *ScheduleRepository) GetByID(ctx context.Context, userID, scheduleID int
 
 		var id int64
 		var medicineName string
-		var startDateStr string
-		var endDateStr sql.NullString
+		var startDate time.Time
+		var endDate sql.NullTime
 		var userId int64
-		var takingTimeStr string
+		var takingTime time.Time
 
-		if err := rows.Scan(&id, &medicineName, &startDateStr, &endDateStr, &userId, &takingTimeStr); err != nil {
+		if err := rows.Scan(&id, &medicineName, &startDate, &endDate, &userId, &takingTime); err != nil {
 			r.logger.Error("failed to scan row",
 				slog.String("operation", operation),
 				slog.String("error", err.Error()))
@@ -254,34 +247,10 @@ func (r *ScheduleRepository) GetByID(ctx context.Context, userID, scheduleID int
 
 		if count == 0 {
 			schedule.MedicineName = medicineName
-
-			startDate, err := time.Parse("2006-01-02", startDateStr)
-			if err != nil {
-				r.logger.Error("failed to parse start date",
-					slog.String("operation", operation),
-					slog.String("error", err.Error()))
-				return nil, fmt.Errorf("%s: %w", operation, err)
-			}
 			schedule.StartDate = startDate
-
-			if endDateStr.Valid && endDateStr.String != "" && endDateStr.String != "infinite" {
-				endDate, err := time.Parse("2006-01-02", endDateStr.String)
-				if err != nil {
-					r.logger.Error("failed to parse end date",
-						slog.String("operation", operation),
-						slog.String("error", err.Error()))
-					return nil, fmt.Errorf("%s: %w", operation, err)
-				}
-				schedule.EndDate = &endDate
+			if endDate.Valid {
+				schedule.EndDate = &endDate.Time
 			}
-		}
-
-		takingTime, err := time.Parse("15:04", takingTimeStr)
-		if err != nil {
-			r.logger.Error("failed to parse taking time",
-				slog.String("operation", operation),
-				slog.String("error", err.Error()))
-			return nil, fmt.Errorf("%s: %w", operation, err)
 		}
 
 		takingTimes = append(takingTimes, entities.TakingTime{

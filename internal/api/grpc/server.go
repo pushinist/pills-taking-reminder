@@ -45,8 +45,10 @@ func (s *GRPCServer) CreateSchedule(ctx context.Context, req *pb.ScheduleRequest
 	if err != nil {
 		switch {
 		case errors.Is(err, usecase.ErrInvalidInput):
+			s.logger.Debug("schedule creation request rejected in gRPC", slog.String("error", err.Error()))
 			return nil, status.Error(codes.InvalidArgument, "Invalid input parameters")
 		case errors.Is(err, usecase.ErrScheduleExists):
+			s.logger.Debug("schedule creation request rejected in gRPC", slog.String("error", err.Error()))
 			return nil, status.Error(codes.AlreadyExists, "Schedule already exists")
 		default:
 			s.logger.Error("failed to create schedule in gRPC", slog.String("error", err.Error()))
@@ -67,6 +69,7 @@ func (s *GRPCServer) GetSchedulesIDs(ctx context.Context, req *pb.UserIDRequest)
 	if err != nil {
 		switch {
 		case errors.Is(err, usecase.ErrInvalidInput):
+			s.logger.Debug("request for getting schedule IDs rejected in gRPC", slog.String("error", err.Error()))
 			return nil, status.Error(codes.InvalidArgument, "Invalid input parameters")
 		default:
 			s.logger.Error("failed to get schedule IDs in gRPC", slog.String("error", err.Error()))
@@ -87,6 +90,7 @@ func (s *GRPCServer) GetNextTakings(ctx context.Context, req *pb.UserIDRequest) 
 	if err != nil {
 		switch {
 		case errors.Is(err, usecase.ErrInvalidInput):
+			s.logger.Debug("request for getting next takings rejected in grpc", slog.String("error", err.Error()))
 			return nil, status.Error(codes.InvalidArgument, "Invalid input parameters")
 		default:
 			s.logger.Error("error getting next takings in grpc", slog.String("error", err.Error()))
@@ -118,8 +122,10 @@ func (s *GRPCServer) GetSchedule(ctx context.Context, req *pb.ScheduleIDRequest)
 	if err != nil {
 		switch {
 		case errors.Is(err, usecase.ErrScheduleNotFound):
+			s.logger.Debug("request for getting schedule rejected in gRPC", slog.String("error", err.Error()))
 			return nil, status.Error(codes.NotFound, "Schedule was not found")
 		case errors.Is(err, usecase.ErrInvalidInput):
+			s.logger.Debug("request for getting schedule rejected in gRPC", slog.String("error", err.Error()))
 			return nil, status.Error(codes.InvalidArgument, "Invalid input parameters")
 		default:
 			s.logger.Error("failed to get schedule in gRPC", slog.String("error", err.Error()))
