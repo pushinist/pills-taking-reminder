@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"pills-taking-reminder/internal/config"
 	"pills-taking-reminder/internal/infrastructure/container"
+	"pills-taking-reminder/pkg/mw"
 	"sync"
 	"syscall"
 	"time"
@@ -19,14 +20,14 @@ import (
 func main() {
 	cfg := config.MustLoad()
 
-	container, err := container.New(cfg)
+	c, err := container.New(cfg)
 	if err != nil {
-		slog.Error("failed to init container",
+		slog.Error("failed to init c",
 			slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
-	log := container.Logger
+	log := c.Logger
 	log.Info("pills-taking-reminder starting",
 		slog.String("env", cfg.Env),
 		slog.String("http_address", cfg.HTTPServer.Address),
@@ -38,10 +39,10 @@ func main() {
 	wg := sync.WaitGroup{}
 
 	router := chi.NewRouter()
-	router.Use(middleware.Logger)
+	router.Use(mw.HTTPLoggingMiddleware(log))
 	router.Use(middleware.Recoverer)
 
-	container.HTTPHandler.RegisterRoutes(router)
+	c.HTTPHandler.RegisterRoutes(router)
 
 	httpServer := &http.Server{
 		Addr:         cfg.HTTPServer.Address,
@@ -65,7 +66,7 @@ func main() {
 	go func() {
 		defer wg.Done()
 		log.Info("starting gRPC server", slog.String("address", cfg.GRPCServer.Address))
-		if err := container.GRPCServer.Run(cfg.GRPCServer.Address); err != nil {
+		if err := c.GRPCServer.Run(cfg.GRPCServer.Address); err != nil {
 			log.Error("failed to start gRPC server", slog.String("error", err.Error()))
 			cancel()
 		}
@@ -92,7 +93,7 @@ func main() {
 		log.Error("failed to graceful shutdown http server", slog.String("error", err.Error()))
 	}
 
-	container.GRPCServer.Stop()
+	c.GRPCServer.Stop()
 
 	wg.Wait()
 	log.Info("app down!")

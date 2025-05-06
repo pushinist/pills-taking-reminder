@@ -64,7 +64,7 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(http.Handler) http.Handler
 
-// GetNextTakings operation middleware
+// GetNextTakings operation mw
 func (siw *ServerInterfaceWrapper) GetNextTakings(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -99,7 +99,7 @@ func (siw *ServerInterfaceWrapper) GetNextTakings(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// GetSchedule operation middleware
+// GetSchedule operation mw
 func (siw *ServerInterfaceWrapper) GetSchedule(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -149,7 +149,7 @@ func (siw *ServerInterfaceWrapper) GetSchedule(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// CreateSchedule operation middleware
+// CreateSchedule operation mw
 func (siw *ServerInterfaceWrapper) CreateSchedule(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -164,7 +164,7 @@ func (siw *ServerInterfaceWrapper) CreateSchedule(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// GetSchedulesIDs operation middleware
+// GetSchedulesIDs operation mw
 func (siw *ServerInterfaceWrapper) GetSchedulesIDs(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 

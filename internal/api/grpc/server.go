@@ -8,6 +8,7 @@ import (
 	"net"
 	"pills-taking-reminder/internal/api/grpc/pb"
 	"pills-taking-reminder/internal/usecase"
+	"pills-taking-reminder/pkg/mw"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -32,6 +33,7 @@ func NewGRPCServer(useCase *usecase.ScheduleUseCase, logger *slog.Logger) *GRPCS
 func (s *GRPCServer) CreateSchedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.ScheduleIDResponse, error) {
 	s.logger.Info("got schedule creating request in grpc",
 		slog.String("medicine", req.MedicineName),
+		slog.Int("frequency", int(req.Frequency)),
 		slog.Int64("user_id", req.UserId))
 
 	input := usecase.ScheduleInput{
@@ -149,7 +151,10 @@ func (s *GRPCServer) Run(addr string) error {
 		return fmt.Errorf("failed to listen: %w", err)
 	}
 
-	s.server = grpc.NewServer()
+	s.server = grpc.NewServer(
+		grpc.UnaryInterceptor(mw.UnaryServerInterceptor(s.logger)),
+		grpc.StreamInterceptor(mw.StreamServerInterceptor(s.logger)))
+
 	pb.RegisterPTRServiceServer(s.server, s)
 
 	reflection.Register(s.server)
