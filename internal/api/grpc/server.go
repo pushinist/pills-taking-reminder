@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
-	"pills-taking-reminder/internal/grpc/pb"
+	"pills-taking-reminder/internal/api/grpc/pb"
 	"pills-taking-reminder/internal/usecase"
 
 	"google.golang.org/grpc"
