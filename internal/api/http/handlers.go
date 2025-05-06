@@ -225,7 +225,9 @@ func (h *ScheduleHandler) respondWithJSON(w http.ResponseWriter, code int, paylo
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	w.Write(response)
+	if _, err := w.Write(response); err != nil {
+		h.logger.Error("failed to write response into writer", slog.String("error", err.Error()))
+	}
 }
 
 func (h *ScheduleHandler) respondWithError(w http.ResponseWriter, code int, message string) {
