@@ -69,8 +69,8 @@ type GetScheduleParams struct {
 	ScheduleId int64 `form:"schedule_id" json:"schedule_id"`
 }
 
-// GetSchedulesIDsParams defines parameters for GetSchedulesIDs.
-type GetSchedulesIDsParams struct {
+// GetScheduleIDsParams defines parameters for GetScheduleIDs.
+type GetScheduleIDsParams struct {
 	// UserId User ID
 	UserId int64 `form:"user_id" json:"user_id"`
 }

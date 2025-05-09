@@ -24,7 +24,7 @@ type ServerInterface interface {
 	CreateSchedule(w http.ResponseWriter, r *http.Request)
 	// Get all schedules for user
 	// (GET /schedules)
-	GetSchedulesIDs(w http.ResponseWriter, r *http.Request, params GetSchedulesIDsParams)
+	GetScheduleIDs(w http.ResponseWriter, r *http.Request, params GetScheduleIDsParams)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -51,7 +51,7 @@ func (_ Unimplemented) CreateSchedule(w http.ResponseWriter, r *http.Request) {
 
 // Get all schedules for user
 // (GET /schedules)
-func (_ Unimplemented) GetSchedulesIDs(w http.ResponseWriter, r *http.Request, params GetSchedulesIDsParams) {
+func (_ Unimplemented) GetScheduleIDs(w http.ResponseWriter, r *http.Request, params GetScheduleIDsParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -64,7 +64,7 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(http.Handler) http.Handler
 
-// GetNextTakings operation mw
+// GetNextTakings operation middleware
 func (siw *ServerInterfaceWrapper) GetNextTakings(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -99,7 +99,7 @@ func (siw *ServerInterfaceWrapper) GetNextTakings(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// GetSchedule operation mw
+// GetSchedule operation middleware
 func (siw *ServerInterfaceWrapper) GetSchedule(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -149,7 +149,7 @@ func (siw *ServerInterfaceWrapper) GetSchedule(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// CreateSchedule operation mw
+// CreateSchedule operation middleware
 func (siw *ServerInterfaceWrapper) CreateSchedule(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -164,14 +164,14 @@ func (siw *ServerInterfaceWrapper) CreateSchedule(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// GetSchedulesIDs operation mw
-func (siw *ServerInterfaceWrapper) GetSchedulesIDs(w http.ResponseWriter, r *http.Request) {
+// GetScheduleIDs operation middleware
+func (siw *ServerInterfaceWrapper) GetScheduleIDs(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params GetSchedulesIDsParams
+	var params GetScheduleIDsParams
 
 	// ------------- Required query parameter "user_id" -------------
 
@@ -189,7 +189,7 @@ func (siw *ServerInterfaceWrapper) GetSchedulesIDs(w http.ResponseWriter, r *htt
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetSchedulesIDs(w, r, params)
+		siw.Handler.GetScheduleIDs(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -322,7 +322,7 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/schedule", wrapper.CreateSchedule)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/schedules", wrapper.GetSchedulesIDs)
+		r.Get(options.BaseURL+"/schedules", wrapper.GetScheduleIDs)
 	})
 
 	return r

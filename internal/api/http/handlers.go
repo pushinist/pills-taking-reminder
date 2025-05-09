@@ -6,9 +6,9 @@ import (
 	"log/slog"
 	"net/http"
 	"pills-taking-reminder/internal/api/dto"
+	api "pills-taking-reminder/internal/api/http/generated"
 	"pills-taking-reminder/internal/domain/usecase"
 	"pills-taking-reminder/pkg/mw"
-	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
@@ -29,17 +29,17 @@ func NewScheduleHandler(useCase *usecase.ScheduleUseCase, logger *slog.Logger) *
 }
 
 func (h *ScheduleHandler) RegisterRoutes(r chi.Router) {
-	r.Post("/schedule", h.CreateSchedule)
-	r.Get("/schedules", h.GetScheduleIDs)
-	r.Get("/schedule", h.GetSchedule)
-	r.Get("/next_takings", h.GetNextTakings)
+	handler := api.HandlerWithOptions(h, api.ChiServerOptions{
+		BaseRouter: r,
+	})
+	r.Mount("/", handler)
 }
 
 func (h *ScheduleHandler) CreateSchedule(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	traceID := mw.GetTraceID(ctx)
 
-	var req dto.ScheduleRequest
+	var req api.CreateScheduleJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.logger.Error("failed to decode request body",
 			slog.String("error", err.Error()),
@@ -55,11 +55,16 @@ func (h *ScheduleHandler) CreateSchedule(w http.ResponseWriter, r *http.Request)
 		h.respondWithError(w, http.StatusBadRequest, "Invalid request parameters")
 		return
 	}
+	duration := 0
+	if req.Duration != nil {
+		duration = *req.Duration
+	}
+
 	input := usecase.ScheduleInput{
 		MedicineName: req.MedicineName,
 		Frequency:    req.Frequency,
-		Duration:     req.Duration,
-		UserID:       req.UserID,
+		Duration:     duration,
+		UserID:       req.UserId,
 	}
 
 	id, err := h.scheduleUseCase.CreateSchedule(ctx, input)
@@ -85,35 +90,17 @@ func (h *ScheduleHandler) CreateSchedule(w http.ResponseWriter, r *http.Request)
 
 }
 
-func (h *ScheduleHandler) GetSchedule(w http.ResponseWriter, r *http.Request) {
+func (h *ScheduleHandler) GetSchedule(w http.ResponseWriter, r *http.Request, params api.GetScheduleParams) {
 	ctx := r.Context()
 	traceID := mw.GetTraceID(ctx)
 
-	userID, err := strconv.ParseInt(r.URL.Query().Get("user_id"), 10, 64)
-	if err != nil || userID <= 0 {
-		h.logger.Debug("got invalid user id",
-			slog.Int64("user_id", userID),
-			slog.String("trace_id", traceID))
-		h.respondWithError(w, http.StatusBadRequest, "Invalid user ID")
-		return
-	}
-
-	scheduleID, err := strconv.ParseInt(r.URL.Query().Get("schedule_id"), 10, 64)
-	if err != nil || scheduleID <= 0 {
-		h.logger.Debug("got invalid schedule id",
-			slog.Int64("schedule_id", scheduleID),
-			slog.String("trace_id", traceID))
-		h.respondWithError(w, http.StatusBadRequest, "Invalid schedule ID")
-		return
-	}
-
-	schedule, err := h.scheduleUseCase.GetSchedule(ctx, userID, scheduleID)
+	schedule, err := h.scheduleUseCase.GetSchedule(ctx, params.UserId, params.ScheduleId)
 	if err != nil {
 		h.logger.Error("failed to get schedule for user",
 			slog.String("error", err.Error()),
 			slog.String("trace_id", traceID),
-			slog.Int64("user_id", userID),
-			slog.Int64("schedule_id", scheduleID))
+			slog.Int64("user_id", params.UserId),
+			slog.Int64("schedule_id", params.ScheduleId))
 		switch {
 		case errors.Is(err, usecase.ErrScheduleNotFound):
 			h.respondWithError(w, http.StatusNotFound, "Schedule was not found")
@@ -125,13 +112,13 @@ func (h *ScheduleHandler) GetSchedule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := dto.ScheduleResponse{
-		ID:           schedule.ID,
-		MedicineName: schedule.MedicineName,
-		StartDate:    schedule.StartDate,
-		EndDate:      schedule.EndDate,
-		UserID:       schedule.UserID,
-		TakingTime:   schedule.TakingTimes,
+	response := api.ScheduleResponse{
+		Id:           &schedule.ID,
+		MedicineName: &schedule.MedicineName,
+		StartDate:    &schedule.StartDate,
+		EndDate:      &schedule.EndDate,
+		UserId:       &schedule.UserID,
+		TakingTime:   &schedule.TakingTimes,
 	}
 
 	h.logger.Info("successfully got schedule info",
@@ -139,25 +126,16 @@ func (h *ScheduleHandler) GetSchedule(w http.ResponseWriter, r *http.Request) {
 	h.respondWithJSON(w, http.StatusOK, response)
 }
 
-func (h *ScheduleHandler) GetScheduleIDs(w http.ResponseWriter, r *http.Request) {
+func (h *ScheduleHandler) GetScheduleIDs(w http.ResponseWriter, r *http.Request, params api.GetScheduleIDsParams) {
 	ctx := r.Context()
 	traceID := mw.GetTraceID(ctx)
 
-	userID, err := strconv.ParseInt(r.URL.Query().Get("user_id"), 10, 64)
-	if err != nil || userID <= 0 {
-		h.logger.Debug("got invalid user id",
-			slog.Int64("user_id", userID),
-			slog.String("trace_id", traceID))
-		h.respondWithError(w, http.StatusBadRequest, "Invalid user ID")
-		return
-	}
-
-	ids, err := h.scheduleUseCase.GetScheduleIDs(ctx, userID)
+	ids, err := h.scheduleUseCase.GetScheduleIDs(ctx, params.UserId)
 	if err != nil {
 		h.logger.Error("failed to get schedules IDs for user",
 			slog.String("error", err.Error()),
 			slog.String("trace_id", traceID),
-			slog.Int64("user_id", userID))
+			slog.Int64("user_id", params.UserId))
 
 		switch {
 		case errors.Is(err, usecase.ErrInvalidInput):
@@ -174,26 +152,16 @@ func (h *ScheduleHandler) GetScheduleIDs(w http.ResponseWriter, r *http.Request)
 	h.respondWithJSON(w, http.StatusOK, ids)
 }
 
-func (h *ScheduleHandler) GetNextTakings(w http.ResponseWriter, r *http.Request) {
+func (h *ScheduleHandler) GetNextTakings(w http.ResponseWriter, r *http.Request, params api.GetNextTakingsParams) {
 	ctx := r.Context()
 	traceID := mw.GetTraceID(ctx)
 
-	userID, err := strconv.ParseInt(r.URL.Query().Get("user_id"), 10, 64)
-	if err != nil || userID <= 0 {
-		h.logger.Debug("got invalid user id",
-			slog.Int64("user_id", userID),
-			slog.String("trace_id", traceID))
-
-		h.respondWithError(w, http.StatusBadRequest, "Invalid user ID")
-		return
-	}
-
-	takings, err := h.scheduleUseCase.GetNextTakings(ctx, userID)
+	takings, err := h.scheduleUseCase.GetNextTakings(ctx, params.UserId)
 	if err != nil {
 		h.logger.Error("failed to get next takings for user",
 			slog.String("error", err.Error()),
 			slog.String("trace_id", traceID),
-			slog.Int64("user_id", userID))
+			slog.Int64("user_id", params.UserId))
 		switch {
 		case errors.Is(err, usecase.ErrInvalidInput):
 			h.respondWithError(w, http.StatusBadRequest, "Invalid input parameters")
@@ -203,11 +171,11 @@ func (h *ScheduleHandler) GetNextTakings(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	response := make([]dto.Taking, len(takings))
+	response := make([]api.Taking, len(takings))
 	for i, taking := range takings {
-		response[i] = dto.Taking{
-			MedicineName: taking.MedicineName,
-			TakingTime:   taking.TakingTime,
+		response[i] = api.Taking{
+			MedicineName: &taking.MedicineName,
+			TakingTime:   &taking.TakingTime,
 		}
 	}
 

@@ -79,7 +79,7 @@ paths:
   /schedules:
     get:
       summary: Get all schedules for user
-      operationId: getSchedulesIDs
+      operationId: getScheduleIDs
       parameters:
         - name: user_id
           in: query

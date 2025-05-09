@@ -47,7 +47,7 @@ func New(cfg *config.Config) (*Container, error) {
 
 	scheduleUseCase := usecase.NewScheduleUseCase(scheduleRepo, cfg.NearTakingInterval)
 
-	httpHandler := httpHandler.NewScheduleHandler(scheduleUseCase, log)
+	httpServer := httpHandler.NewScheduleHandler(scheduleUseCase, log)
 
 	grpcServer := grpc.NewGRPCServer(scheduleUseCase, log)
 
@@ -55,7 +55,7 @@ func New(cfg *config.Config) (*Container, error) {
 		Config:          cfg,
 		Logger:          log,
 		ScheduleUseCase: scheduleUseCase,
-		HTTPHandler:     httpHandler,
+		HTTPHandler:     httpServer,
 		GRPCServer:      grpcServer,
 	}, nil
 
