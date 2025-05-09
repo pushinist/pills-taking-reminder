@@ -13,7 +13,6 @@ var (
 	ErrInvalidInput     = errors.New("invalid input parameters")
 	ErrScheduleNotFound = errors.New("schedule was not found")
 	ErrScheduleExists   = errors.New("schedule already exists")
-	ErrDatabaseError    = errors.New("database error")
 )
 
 type ScheduleInput struct {
