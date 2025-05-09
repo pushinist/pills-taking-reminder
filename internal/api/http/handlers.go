@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"pills-taking-reminder/internal/api/dto"
-	"pills-taking-reminder/internal/usecase"
+	"pills-taking-reminder/internal/domain/usecase"
 	"pills-taking-reminder/pkg/mw"
 	"strconv"
 

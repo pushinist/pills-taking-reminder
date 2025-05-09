@@ -6,8 +6,8 @@ import (
 	httpHandler "pills-taking-reminder/internal/api/http"
 	"pills-taking-reminder/internal/config"
 	"pills-taking-reminder/internal/domain/repository"
+	"pills-taking-reminder/internal/domain/usecase"
 	"pills-taking-reminder/internal/infrastructure/postgres"
-	"pills-taking-reminder/internal/usecase"
 	"pills-taking-reminder/pkg/logger"
 )
 

@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"net"
 	"pills-taking-reminder/internal/api/grpc/pb"
-	"pills-taking-reminder/internal/usecase"
+	"pills-taking-reminder/internal/domain/usecase"
 	"pills-taking-reminder/pkg/mw"
 
 	"google.golang.org/grpc"
