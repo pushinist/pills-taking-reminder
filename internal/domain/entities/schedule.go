@@ -27,7 +27,7 @@ func NewSchedule(medicineName string, frequency, duration int, userID int64) (*S
 		return nil, ErrInvalidFrequency
 	}
 
-	startDate := time.Now()
+	startDate := TimeNow()
 	var endDate *time.Time
 
 	if duration > 0 {

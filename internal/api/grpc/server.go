@@ -84,7 +84,7 @@ func (s *GRPCServer) GetSchedulesIDs(ctx context.Context, req *pb.UserIDRequest)
 }
 
 func (s *GRPCServer) GetNextTakings(ctx context.Context, req *pb.UserIDRequest) (*pb.TakingList, error) {
-	s.logger.Info("got GetNextTakings request in groc",
+	s.logger.Info("got GetNextTakings request in grpc",
 		slog.Int64("user_id", req.UserId))
 
 	takings, err := s.scheduleUseCase.GetNextTakings(ctx, req.UserId)

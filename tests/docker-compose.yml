@@ -1,0 +1,20 @@
+name: pills-taking-reminder
+
+services:
+  postgres_test:
+    container_name: postgres_test
+    image: postgres:latest
+    command:
+      ["postgres", "-c", "log_statement=all", "-c", "log_destination=stderr"]
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pills_taking_reminder_test
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: pg_isready -U postgres -d pills_taking_reminder_test
+      interval: 3s
+      timeout: 3s
+      retries: 3
+

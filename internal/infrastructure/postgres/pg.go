@@ -142,7 +142,7 @@ func (r *ScheduleRepository) GetNextTakings(ctx context.Context, userID int64, i
 		slog.String("operation", operation),
 		slog.Int64("user_id", userID))
 
-	now := time.Now()
+	now := TimeNow()
 	currentTime := now.Format("15:04")
 
 	intervalDuration, err := time.ParseDuration(interval)
