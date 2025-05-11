@@ -2,6 +2,7 @@ package entities
 
 import (
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -34,7 +35,7 @@ func NewSchedule(medicineName string, frequency, duration int, userID int64) (*S
 		endDate = &end
 	}
 
-	takingTimes, err := calculateTakingTimes(frequency)
+	takingTimes, err := CalculateTakingTimes(frequency)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +91,11 @@ func (s *Schedule) GetNextTakings(from time.Time, interval time.Duration) []Taki
 	return takings
 }
 
-func calculateTakingTimes(frequency int) ([]TakingTime, error) {
+func CalculateTakingTimes(frequency int) ([]TakingTime, error) {
+	if frequency < 1 || frequency > 15 {
+		return nil, fmt.Errorf("incorrect frequency")
+	}
+
 	startHour := 8
 	endHour := 22
 
