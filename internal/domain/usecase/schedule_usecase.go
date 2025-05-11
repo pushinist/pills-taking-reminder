@@ -49,7 +49,7 @@ func NewScheduleUseCase(scheduleRepo repository.ScheduleRepository, interval tim
 }
 
 func (uc *ScheduleUseCase) CreateSchedule(ctx context.Context, input ScheduleInput) (int64, error) {
-	if input.MedicineName == "" || input.Frequency < 1 || input.Duration < 0 || input.UserID <= 0 {
+	if input.MedicineName == "" || input.Frequency < 1 || input.Duration < 0 || input.UserID <= 0 || input.Frequency > 15 {
 		return 0, ErrInvalidInput
 	}
 
