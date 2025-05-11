@@ -1,3 +1,5 @@
+TEST_DOCKER_COMPOSE := "docker compose --file tests/docker-compose.yml"
+
 generate-restapi: clean-restapi
     mkdir -p ./internal/api/http/generated
     oapi-codegen -package api -generate types -o ./internal/api/http/generated/models.go ./api/openapi/openapi.yaml
@@ -25,3 +27,15 @@ build:
 run: build
     ./bin/main
 
+test-infrastructure: test-infrastructure-down
+    {{TEST_DOCKER_COMPOSE}} up --detach --build
+    {{TEST_DOCKER_COMPOSE}} logs --follow
+
+test-infrastructure-down:
+    {{TEST_DOCKER_COMPOSE}} down --remove-orphans
+
+unit-test:
+    go test -cover -v --race ./internal/domain/entities 
+
+test: unit-test
+    go test -cover -v --race ./tests/
